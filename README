@@ -1,0 +1,5 @@
+.h1 Install
+
+1. Download and setup OpenFire (http://www.igniterealtime.org).
+2. Link the neccessary libraries to the project (Smack, Hamcrest, Windowlicker)
+3. Build and run :)
