@@ -1,5 +1,8 @@
 package auctionsniper;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 import javax.swing.SwingUtilities;
 
 import org.jivesoftware.smack.Chat;
@@ -11,7 +14,7 @@ import org.jivesoftware.smack.packet.Message;
 import auctionsniper.ui.MainWindow;
 
 @SuppressWarnings("unused")
-public class Main {
+public class Main implements SniperListener {
 	private MainWindow ui;
 	private Chat notToBeGCd;
 	
@@ -23,6 +26,9 @@ public class Main {
 	public static final String AUCTION_RESOURCE = "Auction";
 	public static final String ITEM_ID_AS_LOGIN = "auction-%s";
 	public static final String AUCTION_ID_FORMAT = ITEM_ID_AS_LOGIN + "@%s/" + AUCTION_RESOURCE;
+	
+	public static final String JOIN_COMMAND_FORMAT = "SOLVersion: 1.1; Command: JOIN;";
+	public static final String BID_COMMAND_FORMAT = "SOLVersion: 1.1; Command: BID; Price: %d;";
 	
 	public Main() throws Exception {
 		startUserInterface();
@@ -50,22 +56,39 @@ public class Main {
 	}
 
 	private void joinAuction(XMPPConnection connection, String itemId) throws XMPPException {
-		final Chat chat = connection.getChatManager().createChat(
-			auctionId(itemId, connection), new MessageListener() {
-			@Override
-			public void processMessage(Chat chat, Message message) {
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						ui.showStatus(MainWindow.STATUS_LOST);
-					}
-				});
-			}
-		});
+		disconnectWhenUICloses(connection);
 		
+		final Chat chat = connection.getChatManager().createChat(
+				auctionId(itemId, connection), null
+			);
+
 		this.notToBeGCd = chat;
 		
-		chat.sendMessage(new Message());
+		Auction auction = new Auction() {
+			public void bid(int amount) {
+				try {
+					chat.sendMessage(String.format(BID_COMMAND_FORMAT, amount));
+				}
+				catch(XMPPException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		chat.addMessageListener(
+			new AuctionMessageTranslator(new AuctionSniper(auction, this))
+		);
+		
+		chat.sendMessage(JOIN_COMMAND_FORMAT);
+	}
+
+	private void disconnectWhenUICloses(final XMPPConnection connection) {
+		ui.addWindowListener(new WindowAdapter() {
+			@Override public void
+			windowClosed(WindowEvent e) {
+				connection.disconnect();
+			}
+		});
 	}
 
 	private static String auctionId(String itemId, XMPPConnection connection) {
@@ -79,5 +102,25 @@ public class Main {
 		connection.login(username, password, AUCTION_RESOURCE);
 		
 		return connection;
+	}
+
+	@Override
+	public void sniperLost() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				ui.showStatus(MainWindow.STATUS_LOST);
+			}
+		});
+	}
+
+	@Override
+	public void sniperBidding() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				ui.showStatus(MainWindow.STATUS_BIDDING);
+			}
+		});
 	}
 }
