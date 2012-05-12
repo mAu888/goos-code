@@ -14,7 +14,7 @@ import org.jivesoftware.smack.packet.Message;
 import auctionsniper.ui.MainWindow;
 
 @SuppressWarnings("unused")
-public class Main implements SniperListener {
+public class Main {
 	private MainWindow ui;
 	private Chat notToBeGCd;
 	
@@ -67,7 +67,7 @@ public class Main implements SniperListener {
 		XMPPAuction auction = new XMPPAuction(chat);
 		
 		chat.addMessageListener(
-			new AuctionMessageTranslator(new AuctionSniper(auction, new SniperStateDisplayer()))
+			new AuctionMessageTranslator(connection.getUser(), new AuctionSniper(auction, new SniperStateDisplayer()))
 		);
 		
 		auction.join();
@@ -93,26 +93,6 @@ public class Main implements SniperListener {
 		connection.login(username, password, AUCTION_RESOURCE);
 		
 		return connection;
-	}
-
-	@Override
-	public void sniperLost() {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				ui.showStatus(MainWindow.STATUS_LOST);
-			}
-		});
-	}
-
-	@Override
-	public void sniperBidding() {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				ui.showStatus(MainWindow.STATUS_BIDDING);
-			}
-		});
 	}
 	
 	/**
@@ -158,6 +138,16 @@ public class Main implements SniperListener {
 		
 		public void sniperJoining() {
 			showStatus(MainWindow.STATUS_JOINING);
+		}
+
+		@Override
+		public void sniperWinning() {
+			showStatus(MainWindow.STATUS_WINNING);
+		}
+
+		@Override
+		public void sniperWon() {
+			showStatus(MainWindow.STATUS_WON);
 		}
 		
 		private void showStatus(final String status) {
