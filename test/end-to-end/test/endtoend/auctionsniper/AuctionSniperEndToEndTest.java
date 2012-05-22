@@ -6,7 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class AuctionSniperEndToEndTest {
-	private final FakeAuctionServer auction = new FakeAuctionServer("item-54321");
+	public static final String ITEM_ID = "item-54321";
+	
+	private final FakeAuctionServer auction = new FakeAuctionServer(ITEM_ID);
 	private final ApplicationRunner application = new ApplicationRunner();
 	
 	@Before public void
@@ -47,15 +49,15 @@ public class AuctionSniperEndToEndTest {
 		auction.hasReceivedJoinRequestFrom(ApplicationRunner.SNIPER_XMPP_ID);
 		
 		auction.reportPrice(1000, 98, "other bidder");
-		application.hasShownSniperIsBidding();
+		application.hasShownSniperIsBidding(1000, 1098);
 		
 		auction.hasReceivedBid(1098, ApplicationRunner.SNIPER_XMPP_ID);
 		
 		auction.reportPrice(1098, 97, ApplicationRunner.SNIPER_XMPP_ID);
-		application.hasShownSniperIsWinning();
+		application.hasShownSniperIsWinning(1098);
 		
 		auction.announceClosed();
-		application.showsSniperHasWonAuction();
+		application.showsSniperHasWonAuction(1098);
 	}
 	
 	@After public void

@@ -5,8 +5,14 @@ public class AuctionSniper implements AuctionEventListener {
 	private final Auction auction;
 	
 	private boolean isWinning = false;
+	private String itemId;
 	
 	public AuctionSniper(Auction auction, SniperListener sniperListener) {
+		this(null, auction, sniperListener);
+	}
+	
+	public AuctionSniper(String itemId, Auction auction, SniperListener sniperListener) {
+		this.itemId = itemId;
 		this.auction = auction;
 		this.sniperListener = sniperListener;
 	}
@@ -29,8 +35,9 @@ public class AuctionSniper implements AuctionEventListener {
 			sniperListener.sniperWinning();
 		}
 		else {
-			auction.bid(price + increment);
-			sniperListener.sniperBidding();
+			int bid = price + increment;
+			auction.bid(bid);
+			sniperListener.sniperBidding(new SniperState(itemId, price, bid));
 		}
 	}
 
